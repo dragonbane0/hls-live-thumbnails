@@ -299,56 +299,59 @@ ThumbnailGenerator.prototype._hasPlaylistChanged = function(newPlaylist) {
 // generate thumbnails for a particular segment
 ThumbnailGenerator.prototype._generateThumbnails = function(segment, segmentSN, timeIntoSegment) {
 	var segmentUrl = url.resolve(this._resolvedPlaylistUrl, segment.properties.uri);
-	return this._getUrlBuffer(segmentUrl).then((buffer) => {
-		return utils.ensureExists(this._tempDir).then(() => {
-			var segmentBaseName = (typeof this._outputNamePrefix === "function" ? this._outputNamePrefix() : this._outputNamePrefix)+"-"+segmentSN;
-			var extension = this._getExtension(segmentUrl);
-			var segmentFileLocation = path.join(this._tempDir, segmentBaseName+"."+extension);
-			return utils.writeFile(segmentFileLocation, buffer).then(() => {
-				var outputBaseFilePath = path.join(this._tempDir, segmentBaseName);
-				return this._generateThumbnailsWithFfmpeg(segmentFileLocation, segment, timeIntoSegment, outputBaseFilePath);
-			}).catch((err) => {
-				utils.unlink(segmentFileLocation);
-				throw err;
-			}).then((files) => {
-				utils.unlink(segmentFileLocation);
+    return this._getUrlBuffer(segmentUrl).then((buffer) => {
+        return utils.ensureExists(this._tempDir).then(() => {
+            var segmentBaseName = (typeof this._outputNamePrefix === "function" ? this._outputNamePrefix() : this._outputNamePrefix) + "-" + segmentSN;
+            var extension = this._getExtension(segmentUrl);
+            var segmentFileLocation = path.join(this._tempDir, segmentBaseName + "." + extension);
+            return utils.writeFile(segmentFileLocation, buffer).then(() => {
+                var outputBaseFilePath = path.join(this._tempDir, segmentBaseName);
+                return this._generateThumbnailsWithFfmpeg(segmentFileLocation, segment, timeIntoSegment, outputBaseFilePath);
+            }).catch((err) => {
+                utils.unlink(segmentFileLocation);
+                throw err;
+            }).then((files) => {
+                utils.unlink(segmentFileLocation);
 
-				if (this._destroyed) {
-					return Promise.resolve([]);
-				}
+                if (this._destroyed) {
+                    return Promise.resolve([]);
+                }
 
-				// move the files to the output folder with proper names
-				var promises = files.map((location, i) => {
-					if (!location) {
-						// generation failed for some reason
-						// might have been just past the end of the file
-						return Promise.resolve(null);
-					}
-					var newFileName = segmentBaseName+"-"+i+".jpg";
-					var newLocation = path.join(this._outputDir, newFileName);
-					return utils.ensureExists(this._outputDir).then(() => {
-						return utils.move(location, newLocation).then(() => {
-							return Promise.resolve(newFileName);
-						});
-					});
-				});
-				return Promise.all(promises);
-			}).then((fileNames) => {
-				return fileNames.map((fileName, i) => {
-					if (!fileName) {
-						return null;
-					}
-					return {
-						name: fileName,
-						time: timeIntoSegment + (this._interval*i)
-					};
-				}).filter((a) => {
-					// filter out the nulls
-					return !!a;
-				});
-			});
-		});
-	});
+                // move the files to the output folder with proper names
+                var promises = files.map((location, i) => {
+                    if (!location) {
+                        // generation failed for some reason
+                        // might have been just past the end of the file
+                        return Promise.resolve(null);
+                    }
+                    var newFileName = segmentBaseName + "-" + i + ".jpg";
+                    var newLocation = path.join(this._outputDir, newFileName);
+                    return utils.ensureExists(this._outputDir).then(() => {
+                        return utils.move(location, newLocation).then(() => {
+                            return Promise.resolve(newFileName);
+                        });
+                    });
+                });
+                return Promise.all(promises);
+            }).then((fileNames) => {
+                return fileNames.map((fileName, i) => {
+                    if (!fileName) {
+                        return null;
+                    }
+                    return {
+                        name: fileName,
+                        time: timeIntoSegment + (this._interval * i)
+                    };
+                }).filter((a) => {
+                    // filter out the nulls
+                    return !!a;
+                });
+            });
+        });
+    }).catch((err) => {
+        this._logger.error("Error", err.stack);
+        throw err;
+    });
 };
 
 ThumbnailGenerator.prototype._getSegmentInfoAtTime = function(segments, segmentContainingTime) {
@@ -392,7 +395,10 @@ ThumbnailGenerator.prototype._getResolvedPlaylistUrl = function() {
 			return Promise.resolve(newUrl);
 		}
 		return Promise.resolve(this._playlistUrl);
-	});
+    }).catch((err) => {
+        this._logger.error("Error", err.stack);
+        throw err;
+    });
 };
 
 ThumbnailGenerator.prototype._generateThumbnailWithFfmpeg = function(segmentFileLocation, timeIntoSegment, outputFilePath) {
@@ -491,7 +497,10 @@ ThumbnailGenerator.prototype._parsePlaylist = function(playlistUrl) {
 			parser.write(buffer.toString());
 			parser.end();
 		});
-	});
+    }).catch((err) => {
+        this._logger.error("Error", err.stack);
+        throw err;
+    });
 };
 
 ThumbnailGenerator.prototype._getUrlBuffer = function(url, dest) {
