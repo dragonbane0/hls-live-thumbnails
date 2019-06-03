@@ -9,7 +9,8 @@ function emptyDir(dirPath) {
 			var fullPath = path.join(dirPath, file);
 			promises.push(stat(fullPath).then((stats) => {
 				if (stats.isFile()) {
-					return unlink(fullPath);
+					return unlink(fullPath).catch((err) => {
+				    });
 				}
 				else if (stats.isDirectory()) {
 					return emptyDir(fullPath).then(() => {
@@ -182,7 +183,8 @@ function move(src, dest) {
 		// try copying
 		return copy(src, dest).then(() => {
 			// delete source
-			return unlink(src);
+			return unlink(src).catch((err) => {
+			});
 		});
 	});
 }

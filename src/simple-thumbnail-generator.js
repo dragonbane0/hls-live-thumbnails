@@ -279,8 +279,10 @@ SimpleThumbnailGenerator.prototype._updateManifest = function() {
 		return utils.writeFile(manifestFile, manifest).then(() => {
 			if (this._destroyed) {
 				// delete it
-				return utils.verifiedUnlink(manifestFile);
+				return utils.verifiedUnlink(manifestFile).catch((err) => {
+				});
 			}
+		}).catch((err) => {
 		});
 	}).catch((err) => {
 		if (!this._destroyed) {

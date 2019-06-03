@@ -308,10 +308,12 @@ ThumbnailGenerator.prototype._generateThumbnails = function(segment, segmentSN, 
                 var outputBaseFilePath = path.join(this._tempDir, segmentBaseName);
                 return this._generateThumbnailsWithFfmpeg(segmentFileLocation, segment, timeIntoSegment, outputBaseFilePath);
             }).catch((err) => {
-                utils.unlink(segmentFileLocation);
+                utils.unlink(segmentFileLocation).catch((err) => {
+				});
                 throw err;
             }).then((files) => {
-                utils.unlink(segmentFileLocation);
+                utils.unlink(segmentFileLocation).catch((err) => {
+				});
 
                 if (this._destroyed) {
                     return Promise.resolve([]);
